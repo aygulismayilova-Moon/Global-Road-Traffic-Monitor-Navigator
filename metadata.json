@@ -1,0 +1,10 @@
+{
+  "name": "Global Road Traffic Monitor & Navigator",
+  "description": "Autonomous global road traffic monitor and turn-by-turn navigator powered by Google Maps with worldwide city selection, live congestion alerts, alternative detour routing, and AI traffic intelligence.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
