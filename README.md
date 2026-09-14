@@ -25,7 +25,7 @@ Autonomous global road traffic monitor and turn-by-turn navigator powered by Goo
 - **Audio Navigator**: Integrated Web Speech API synthesized turn-by-turn alerts and traffic condition announcements (muteable).
 
 ### 5. Gemini AI Traffic Intelligence
-- **AI Corridor Analysis**: Powered by Google Gemini (`gemini-2.5-flash` / `gemini-3.8-flash`) via the server-side `@google/genai` SDK.
+- **AI Corridor Analysis**: Powered by Google Gemini (`gemini-3.8-flash` / `gemini-3.6-flash`) via the server-side `@google/genai` SDK.
 - Provides actionable commuter recommendations, bottleneck summaries, and detour optimizations based on active weather, peak hours, and road incidents.
 
 ## Architecture & Tech Stack

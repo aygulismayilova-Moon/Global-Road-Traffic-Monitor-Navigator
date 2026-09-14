@@ -293,7 +293,7 @@ app.post("/api/traffic/ai-analysis", async (req, res) => {
 
   const prompt = `You are an expert autonomous metropolitan traffic flow coordinator and road navigation engineer. Analyze the current road traffic situation in ${cityName || "Metropolis"}${country ? `, ${country}` : ""}. Key corridors evaluated: ${JSON.stringify(knownCorridors || ["Main Arterial", "Beltway", "Bridge/Tunnel Crossing", "Commercial Avenue"])}. Reported congestion level: ${currentCongestion || 65}%. Current weather: ${weather || "Clear"}. Provide a comprehensive, highly accurate autonomous traffic diagnosis: 1. Identify 3 critical congested roads or bottlenecks in this city. 2. For each congested road, specify an exact, realistic alternative road / detour / bypass corridor that drivers can take to avoid the bottleneck, with estimated time savings. 3. Provide 2 cross-city detour itineraries (congested route vs alternative route with time saved). 4. Give an overall congestion score (0-100) and status ("Fluid", "Moderate Traffic", "Heavy Congestion", "Severe Gridlock"). 5. Provide a crisp executive traffic summary and an autonomous navigator alert advisory.`;
 
-  const CANDIDATE_MODELS = ["gemini-2.5-flash", "gemini-3.8-flash", "gemini-2.5-flash-lite"];
+  const CANDIDATE_MODELS = ["gemini-3.8-flash", "gemini-3.6-flash", "gemini-flash-latest", "gemini-3.1-flash-lite"];
   let parsedData = null;
   let modelUsed = "";
 
@@ -385,34 +385,41 @@ app.post("/api/traffic/quick-alert", async (req, res) => {
     });
   }
 
-  try {
-    const prompt = `Provide a concise 1-sentence spoken navigation alert for a driver. Current road: ${currentRoad || "Arterial road"}. Upcoming road segment: ${upcomingRoad || "Next corridor"}. Vehicle speed: ${speed || 45} km/h. Local road congestion: ${congestionLevel || "moderate"}. Focus on actionable driving advice and whether to take an alternative bypass. Keep it under 25 words.`;
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-      config: {
-        systemInstruction: "You are a fast, real-time in-car navigational assistant voice. Be direct, clear, and reassuring.",
-      },
-    });
+  const prompt = `Provide a concise 1-sentence spoken navigation alert for a driver. Current road: ${currentRoad || "Arterial road"}. Upcoming road segment: ${upcomingRoad || "Next corridor"}. Vehicle speed: ${speed || 45} km/h. Local road congestion: ${congestionLevel || "moderate"}. Focus on actionable driving advice and whether to take an alternative bypass. Keep it under 25 words.`;
+  const QUICK_ALERT_MODELS = ["gemini-3.8-flash", "gemini-3.6-flash", "gemini-flash-latest", "gemini-3.1-flash-lite"];
 
-    res.json({
-      shortAlert: response.text?.trim() || "Traffic warning ahead. Alternative route available.",
-      advisory: "Low-latency telemetry synced.",
-      recommendedSpeed: Math.max(30, Math.min(80, (speed || 50) - 10)),
-      modelUsed: "gemini-2.5-flash",
-    });
-  } catch (error: any) {
-    console.error("Quick alert error:", error);
-    res.json({
-      shortAlert: "Caution: slow traffic detected ahead on route.",
-      advisory: "Proceed with caution.",
-      recommendedSpeed: 45,
-      modelUsed: "fallback-lite",
-    });
+  for (const model of QUICK_ALERT_MODELS) {
+    try {
+      const response = await ai.models.generateContent({
+        model,
+        contents: prompt,
+        config: {
+          systemInstruction: "You are a fast, real-time in-car navigational assistant voice. Be direct, clear, and reassuring.",
+        },
+      });
+
+      if (response && response.text) {
+        return res.json({
+          shortAlert: response.text.trim(),
+          advisory: "Low-latency telemetry synced.",
+          recommendedSpeed: Math.max(30, Math.min(80, (speed || 50) - 10)),
+          modelUsed: model,
+        });
+      }
+    } catch (error: any) {
+      console.warn(`Quick alert model ${model} error:`, error?.message);
+    }
   }
+
+  return res.json({
+    shortAlert: "Caution: slow traffic detected ahead on route. Alternative bypass recommended.",
+    advisory: "Proceed with caution.",
+    recommendedSpeed: 45,
+    modelUsed: "fallback-lite",
+  });
 });
 
-// Maps Grounding using gemini-2.5-flash with googleMaps tool
+// Maps Grounding using gemini-3.8-flash with googleMaps tool
 app.post("/api/traffic/grounded", async (req, res) => {
   const { query, city } = req.body;
   const ai = getGenAI();
@@ -423,29 +430,36 @@ app.post("/api/traffic/grounded", async (req, res) => {
     });
   }
 
-  try {
-    const prompt = `Give the latest geographic and traffic landmark information for ${city}: ${query || "major arterial highways, bypass rings, and bridge bottlenecks"}.`;
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-      config: {
-        tools: [{ googleMaps: {} }],
-      },
-    });
+  const prompt = `Give the latest geographic and traffic landmark information for ${city}: ${query || "major arterial highways, bypass rings, and bridge bottlenecks"}.`;
+  const GROUNDED_MODELS = ["gemini-3.8-flash", "gemini-3.6-flash", "gemini-flash-latest"];
 
-    res.json({
-      answer: response.text || "Traffic and road points mapped successfully.",
-      grounded: true,
-      modelUsed: "gemini-2.5-flash (with googleMaps tool)",
-    });
-  } catch (error: any) {
-    console.error("Grounded maps query error:", error);
-    res.json({
-      answer: `Mapped major highways and alternative bypass corridors for ${city}.`,
-      grounded: false,
-      error: error.message,
-    });
+  for (const model of GROUNDED_MODELS) {
+    try {
+      const response = await ai.models.generateContent({
+        model,
+        contents: prompt,
+        config: {
+          tools: [{ googleMaps: {} }],
+        },
+      });
+
+      if (response && response.text) {
+        return res.json({
+          answer: response.text,
+          grounded: true,
+          modelUsed: `${model} (with googleMaps tool)`,
+        });
+      }
+    } catch (error: any) {
+      console.warn(`Grounded model ${model} error:`, error?.message);
+    }
   }
+
+  return res.json({
+    answer: `Mapped major highways and alternative bypass corridors for ${city}.`,
+    grounded: false,
+    error: "Grounded search temporarily unavailable",
+  });
 });
 
 // Vite middleware configuration

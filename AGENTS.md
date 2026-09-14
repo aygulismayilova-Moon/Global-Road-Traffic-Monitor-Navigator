@@ -33,7 +33,7 @@ This file provides context, rules, and guidelines for AI coding agents modifying
 
 ## 5. Gemini AI Integration
 - Use the official `@google/genai` TypeScript SDK.
-- Preferred models: `gemini-2.5-flash` with graceful fallback to `gemini-3.8-flash`.
+- Preferred models: `gemini-3.8-flash` with graceful fallback to `gemini-3.6-flash`.
 - Always wrap model calls in `try/catch` and provide deterministic, sensible fallback traffic advice if the AI model is temporarily rate-limited or unavailable.
 
 ## 6. Build and Verification Workflow

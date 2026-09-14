@@ -352,7 +352,7 @@ export const TrafficMonitorPanel: React.FC<TrafficMonitorPanelProps> = ({
               AI Deep Thinking Traffic Intelligence
             </span>
             <span className="text-[10px] text-purple-400/80 font-mono">
-              {aiReport.modelUsed || 'gemini-2.5-flash'}
+              {aiReport.modelUsed || 'gemini-3.8-flash'}
             </span>
           </div>
           <p className="text-xs text-slate-300 leading-relaxed">{aiReport.summary}</p>
